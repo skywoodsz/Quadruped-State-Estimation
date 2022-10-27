@@ -1,0 +1,1 @@
+bool[4] contact_state

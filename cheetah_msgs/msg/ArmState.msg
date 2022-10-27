@@ -1,0 +1,5 @@
+Header header
+geometry_msgs/Point arm_pos
+geometry_msgs/Vector3 arm_vel
+geometry_msgs/Vector3 arm_force
+geometry_msgs/Quaternion arm_ori

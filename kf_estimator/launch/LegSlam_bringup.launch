@@ -1,0 +1,13 @@
+<launch>
+    <arg name="robot_type" default="aliengo"/>
+    <arg name="hung_up" default="false"/>
+
+    <param name="robot_description" command="$(find xacro)/xacro $(find unitree_description)/urdf/robot.xacro
+       robot_type:=$(arg robot_type) hung_up:=$(arg hung_up)
+    "/>
+
+    <node name="kf_estimator" pkg="kf_estimator" type="kf_estimator_node" respawn="false"/>
+
+<!--     <node name="aliengo_control" pkg="aliengo_control" type="aliengo_low_level" respawn="false" -->
+<!--           clear_params="true"/> -->
+</launch>

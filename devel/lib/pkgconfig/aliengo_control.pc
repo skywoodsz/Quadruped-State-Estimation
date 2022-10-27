@@ -1,8 +1,0 @@
-prefix=/home/skywoodsz/Quadrupted/alienGo_ws/LegSlam_ws/src/devel
-
-Name: aliengo_control
-Description: Description of aliengo_control
-Version: 0.0.0
-Cflags: -I/home/skywoodsz/Quadrupted/alienGo_ws/LegSlam_ws/src/aliengo_control/include
-Libs: -L${prefix}/lib -laliengo_control
-Requires: roscpp

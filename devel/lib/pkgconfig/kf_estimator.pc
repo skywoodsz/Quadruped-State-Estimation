@@ -1,8 +1,0 @@
-prefix=/home/skywoodsz/Quadrupted/alienGo_ws/LegSlam_ws/src/devel
-
-Name: kf_estimator
-Description: Description of kf_estimator
-Version: 0.0.0
-Cflags: -I/home/skywoodsz/Quadrupted/alienGo_ws/LegSlam_ws/src/kf_estimator/include
-Libs: -L${prefix}/lib -lkf_estimator
-Requires: roscpp

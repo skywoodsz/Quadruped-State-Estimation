@@ -26,6 +26,7 @@
 
 #include <kf_estimator/dog_type.h>
 #include <kf_estimator/state_estimate.h>
+#include <kf_estimator/terrain_estimator.h>
 
 class KF_ESTIMATOR{
 public:
@@ -64,8 +65,9 @@ private:
     LegJoints leg_joints_[4];
 
     std::shared_ptr<StateEstimateBase> linear_estimate_;
+    std::shared_ptr<TerrainEstimator> terrain_estimator_;
 
-    std::shared_ptr<realtime_tools::RealtimePublisher<cheetah_msgs::LegsState> > state_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<cheetah_msgs::LegsState>> state_pub_;
 };
 
 #endif //SRC_KF_ESTIMATOR_H

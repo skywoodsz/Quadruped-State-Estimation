@@ -30,6 +30,8 @@ pnh_(private_node_handle)
 
     linear_estimate_ = std::make_shared<LinearKFPosVelEstimator>(nh_);
 
+    terrain_estimator_ = std::make_shared<TerrainEstimator>(nh_);
+
     // 0. get joint
     motor_sub_ = nh_.subscribe<cheetah_msgs::MotorState>("/dog/motor_data", 1, &KF_ESTIMATOR::MotorCallBack, this);
 
@@ -68,6 +70,10 @@ void KF_ESTIMATOR::update(const ros::TimerEvent &event) {
         if (linear_estimate_ != nullptr)
             linear_estimate_->update(robot_state_);
         pinocchioKine();
+
+        if(terrain_estimator_ != nullptr)
+            terrain_estimator_->update(robot_state_);
+
         publishState();
     }
 }

@@ -44,6 +44,7 @@ link_directories(
 add_library(${PROJECT_NAME}
         src/kf_estimator.cpp
         src/state_estimate.cpp
+        src/terrain_estimator.cpp
         )
 
 target_link_libraries(${PROJECT_NAME}

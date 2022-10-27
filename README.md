@@ -42,7 +42,7 @@ catkin_make
 cd catkin_ws
 sudo su
 source devel/setup.bash
-rosrun rosrun aliengo_control aliengo_low_level_node
+rosrun aliengo_control aliengo_low_level_node
 ```
 
 2. Run the state estimator and the terrain estimator.

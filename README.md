@@ -12,7 +12,7 @@ The project depends on **Pinocchio**, **Eigen**, **ROS** and runs on **ubuntu200
 
 ### ROS
 
-You can follow the [tutorial](http://wiki.ros.org/noetic/Installation/Ubuntu) to install ROS Neotic.
+You can follow the [tutorial](http://wiki.ros.org/noetic/Installation/Ubuntu) to install ROS Noetic.
 
 ### Eigen
 

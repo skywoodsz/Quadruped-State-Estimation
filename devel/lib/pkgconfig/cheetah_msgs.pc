@@ -1,0 +1,8 @@
+prefix=/home/skywoodsz/Quadrupted/alienGo_ws/LegSlam_ws/src/devel
+
+Name: cheetah_msgs
+Description: Description of cheetah_msgs
+Version: 0.0.0
+Cflags: -I/home/skywoodsz/Quadrupted/alienGo_ws/LegSlam_ws/src/devel/include
+Libs: -L${prefix}/lib 
+Requires: message_runtime std_msgs geometry_msgs

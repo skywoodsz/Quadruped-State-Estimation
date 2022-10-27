@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: kf_estimator
+Description: Description of kf_estimator
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -lkf_estimator
+Requires: roscpp

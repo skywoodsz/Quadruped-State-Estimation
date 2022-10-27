@@ -1,0 +1,3 @@
+<launch>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find kf_estimator)/cfg/rviz.rviz" required="true" />
+</launch>

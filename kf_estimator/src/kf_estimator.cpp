@@ -19,7 +19,8 @@ pnh_(private_node_handle)
            ROS_ERROR("Can't find urdf_string");
         pin_model_ = std::make_shared<pinocchio::Model>();
         urdf_ = urdf::parseURDF(urdf_string);
-        pinocchio::urdf::buildModel(urdf_, pinocchio::JointModelFreeFlyer(), *pin_model_);
+//        pinocchio::urdf::buildModel(urdf_, pinocchio::JointModelFreeFlyer(), *pin_model_);
+        pinocchio::urdf::buildModel(urdf_, *pin_model_);
         pin_data_ = std::make_shared<pinocchio::Data>(*pin_model_);
     }
 
@@ -84,16 +85,24 @@ void KF_ESTIMATOR::update(const ros::TimerEvent &event) {
 void KF_ESTIMATOR::pinocchioKine() {
     Eigen::VectorXd q(pin_model_->nq), v(pin_model_->nv);
 
-    // world frame
+    // body frame
     for (int leg = 0; leg < 4; ++leg)
         for (int joint = 0; joint < 3; ++joint)
         {
-            q(7 + leg * 3 + joint) = leg_joints_[leg].joints_[joint].pos;
-            v(6 + leg * 3 + joint) = leg_joints_[leg].joints_[joint].vel;
+            q(leg * 3 + joint) = leg_joints_[leg].joints_[joint].pos;
+            v(leg * 3 + joint) = leg_joints_[leg].joints_[joint].vel;
         }
 
-    q.head(7) << robot_state_.pos_, robot_state_.quat_.coeffs();
-    v.head(6) << robot_state_.linear_vel_, robot_state_.angular_vel_;
+    // world frame
+//    for (int leg = 0; leg < 4; ++leg)
+//        for (int joint = 0; joint < 3; ++joint)
+//        {
+//            q(7 + leg * 3 + joint) = leg_joints_[leg].joints_[joint].pos;
+//            v(6 + leg * 3 + joint) = leg_joints_[leg].joints_[joint].vel;
+//        }
+//
+//    q.head(7) << robot_state_.pos_, robot_state_.quat_.coeffs();
+//    v.head(6) << rob ot_state_.linear_vel_, robot_state_.angular_vel_;
 
     pinocchio::forwardKinematics(*pin_model_, *pin_data_, q, v);
     pinocchio::computeJointJacobians(*pin_model_, *pin_data_);
@@ -107,10 +116,10 @@ void KF_ESTIMATOR::pinocchioKine() {
                 pinocchio::getFrameVelocity(*pin_model_, *pin_data_, frame_id, pinocchio::ReferenceFrame::LOCAL_WORLD_ALIGNED)
                         .linear();
         // body frame
-        robot_state_.bfoot_pos_[leg] = robot_state_.foot_pos_[leg] - robot_state_.pos_;
-        robot_state_.bfoot_vel_[leg] =
-                pinocchio::getFrameVelocity(*pin_model_, *pin_data_, frame_id, pinocchio::ReferenceFrame::LOCAL)
-                        .linear();
+//        robot_state_.bfoot_pos_[leg] = robot_state_.foot_pos_[leg] - robot_state_.pos_;
+//        robot_state_.bfoot_vel_[leg] =
+//                pinocchio::getFrameVelocity(*pin_model_, *pin_data_, frame_id, pinocchio::ReferenceFrame::LOCAL)
+//                        .linear();
     }
 }
 

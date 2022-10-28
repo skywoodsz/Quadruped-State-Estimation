@@ -157,8 +157,14 @@ void LinearKFPosVelEstimator::update(RobotState& state)
                 (state.contact_state_[i] ? 1. : high_suspect_number) * r.block(r_index2, r_index2, 3, 3);
         r(r_index3, r_index3) = (state.contact_state_[i] ? 1. : high_suspect_number) * r(r_index3, r_index3);
 
-        Vec3<double> p_rel = state.bfoot_pos_[i]; // b_pfoot
-        Vec3<double> dp_rel = state.bfoot_vel_[i]; // b_vfoot
+//        Vec3<double> p_rel = state.bfoot_pos_[i]; // b_pfoot
+//        Vec3<double> dp_rel = state.bfoot_vel_[i]; // b_vfoot
+//        Vec3<double> p_f = Rbod * p_rel;
+//        Vec3<double> omegaBody = state.angular_vel_;
+//        Vec3<double> dp_f = Rbod * (omegaBody.cross(p_rel) + dp_rel);
+
+        Vec3<double> p_rel = state.foot_pos_[i]; // b_pfoot
+        Vec3<double> dp_rel = state.foot_vel_[i]; // b_vfoot
         Vec3<double> p_f = Rbod * p_rel;
         Vec3<double> omegaBody = state.angular_vel_;
         Vec3<double> dp_f = Rbod * (omegaBody.cross(p_rel) + dp_rel);

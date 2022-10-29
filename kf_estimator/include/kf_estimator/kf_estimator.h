@@ -38,7 +38,8 @@ private:
     void ImuCallBack(const sensor_msgs::Imu::ConstPtr& msg);
     void MotorCallBack(const cheetah_msgs::MotorState::ConstPtr& msg);
     void LegContactCallBack(const cheetah_msgs::LegContact::ConstPtr& msg);
-    void pinocchioKine();
+    void BodyPinocchioKine();
+    void PinocchioKine();
     void update(const ros::TimerEvent& event);
     void publishState();
 
@@ -59,8 +60,8 @@ private:
     double initial_yaw_;
 
     std::shared_ptr<urdf::ModelInterface> urdf_;
-    std::shared_ptr<pinocchio::Model> pin_model_;
-    std::shared_ptr<pinocchio::Data> pin_data_;
+    std::shared_ptr<pinocchio::Model> pin_bmodel_, pin_model_;
+    std::shared_ptr<pinocchio::Data> pin_bdata_, pin_data_;
 
     LegJoints leg_joints_[4];
 

@@ -7,22 +7,23 @@
 
 KF_ESTIMATOR::KF_ESTIMATOR(const ros::NodeHandle &node_handle,
                            const ros::NodeHandle &private_node_handle) :
-nh_(node_handle),
-pnh_(private_node_handle)
+        nh_(node_handle),
+        pnh_(private_node_handle)
 {
-    if (pin_model_ == nullptr && pin_data_ == nullptr)
-    {
-        // Get the URDF on param server, then build model and data
-        std::string urdf_string;
-        nh_.getParam("/robot_description", urdf_string);
-        if (urdf_string.empty())
-           ROS_ERROR("Can't find urdf_string");
-        pin_model_ = std::make_shared<pinocchio::Model>();
-        urdf_ = urdf::parseURDF(urdf_string);
-//        pinocchio::urdf::buildModel(urdf_, pinocchio::JointModelFreeFlyer(), *pin_model_);
-        pinocchio::urdf::buildModel(urdf_, *pin_model_);
-        pin_data_ = std::make_shared<pinocchio::Data>(*pin_model_);
-    }
+
+    // Get the URDF on param server, then build model and data
+    std::string urdf_string;
+    nh_.getParam("/robot_description", urdf_string);
+    if (urdf_string.empty())
+        ROS_ERROR("Can't find urdf_string");
+    pin_bmodel_ = std::make_shared<pinocchio::Model>();
+    pin_model_ = std::make_shared<pinocchio::Model>();
+
+    urdf_ = urdf::parseURDF(urdf_string);
+    pinocchio::urdf::buildModel(urdf_, *pin_bmodel_);
+    pinocchio::urdf::buildModel(urdf_, pinocchio::JointModelFreeFlyer(), *pin_model_);
+    pin_bdata_ = std::make_shared<pinocchio::Data>(*pin_bmodel_);
+    pin_data_ = std::make_shared<pinocchio::Data>(*pin_model_);
 
     Reset();
 
@@ -70,7 +71,9 @@ void KF_ESTIMATOR::update(const ros::TimerEvent &event) {
     {
         if (linear_estimate_ != nullptr)
             linear_estimate_->update(robot_state_);
-        pinocchioKine();
+
+        BodyPinocchioKine();
+        PinocchioKine();
 
         if(terrain_estimator_ != nullptr)
             terrain_estimator_->update(robot_state_);
@@ -80,10 +83,10 @@ void KF_ESTIMATOR::update(const ros::TimerEvent &event) {
 }
 
 /**
- * flating base forward kinematics
+ * body frame forward kinematics
  */
-void KF_ESTIMATOR::pinocchioKine() {
-    Eigen::VectorXd q(pin_model_->nq), v(pin_model_->nv);
+void KF_ESTIMATOR::BodyPinocchioKine() {
+    Eigen::VectorXd q(pin_bmodel_->nq), v(pin_bmodel_->nv);
 
     // body frame
     for (int leg = 0; leg < 4; ++leg)
@@ -93,16 +96,35 @@ void KF_ESTIMATOR::pinocchioKine() {
             v(leg * 3 + joint) = leg_joints_[leg].joints_[joint].vel;
         }
 
+    pinocchio::forwardKinematics(*pin_bmodel_, *pin_bdata_, q, v);
+    pinocchio::computeJointJacobians(*pin_bmodel_, *pin_bdata_);
+    pinocchio::updateFramePlacements(*pin_bmodel_, *pin_bdata_);
+
+    for (int leg = 0; leg < 4; ++leg)
+    {
+        pinocchio::FrameIndex frame_id = pin_bmodel_->getFrameId(LEG_PREFIX[leg] + "_foot");
+        robot_state_.bfoot_pos_[leg] = pin_bdata_->oMf[frame_id].translation();
+        robot_state_.bfoot_vel_[leg] =
+                pinocchio::getFrameVelocity(*pin_bmodel_, *pin_bdata_, frame_id, pinocchio::ReferenceFrame::LOCAL_WORLD_ALIGNED)
+                        .linear();
+    }
+}
+
+/**
+ * flating base frame forward kinematics
+ */
+void KF_ESTIMATOR::PinocchioKine() {
+    Eigen::VectorXd q(pin_model_->nq), v(pin_model_->nv);
     // world frame
-//    for (int leg = 0; leg < 4; ++leg)
-//        for (int joint = 0; joint < 3; ++joint)
-//        {
-//            q(7 + leg * 3 + joint) = leg_joints_[leg].joints_[joint].pos;
-//            v(6 + leg * 3 + joint) = leg_joints_[leg].joints_[joint].vel;
-//        }
-//
-//    q.head(7) << robot_state_.pos_, robot_state_.quat_.coeffs();
-//    v.head(6) << rob ot_state_.linear_vel_, robot_state_.angular_vel_;
+    for (int leg = 0; leg < 4; ++leg)
+        for (int joint = 0; joint < 3; ++joint)
+        {
+            q(7 + leg * 3 + joint) = leg_joints_[leg].joints_[joint].pos;
+            v(6 + leg * 3 + joint) = leg_joints_[leg].joints_[joint].vel;
+        }
+
+    q.head(7) << robot_state_.pos_, robot_state_.quat_.coeffs();
+    v.head(6) << robot_state_.linear_vel_, robot_state_.angular_vel_;
 
     pinocchio::forwardKinematics(*pin_model_, *pin_data_, q, v);
     pinocchio::computeJointJacobians(*pin_model_, *pin_data_);
@@ -115,12 +137,8 @@ void KF_ESTIMATOR::pinocchioKine() {
         robot_state_.foot_vel_[leg] =
                 pinocchio::getFrameVelocity(*pin_model_, *pin_data_, frame_id, pinocchio::ReferenceFrame::LOCAL_WORLD_ALIGNED)
                         .linear();
-        // body frame
-//        robot_state_.bfoot_pos_[leg] = robot_state_.foot_pos_[leg] - robot_state_.pos_;
-//        robot_state_.bfoot_vel_[leg] =
-//                pinocchio::getFrameVelocity(*pin_model_, *pin_data_, frame_id, pinocchio::ReferenceFrame::LOCAL)
-//                        .linear();
     }
+
 }
 
 /**
@@ -233,6 +251,5 @@ void KF_ESTIMATOR::ImuCallBack(const sensor_msgs::Imu_<std::allocator<void>>::Co
 
     imu_flag_ = true;
 }
-
 
 

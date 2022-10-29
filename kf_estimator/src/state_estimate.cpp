@@ -52,26 +52,31 @@ void StateEstimateBase::update(RobotState& state)
         tf_br_.sendTransform(transform_stamped);
 
         // path
-        if (path_pub_->trylock()) {
-            geometry_msgs::PoseStamped legged_pose;
-            legged_pose.header.stamp = time;
-            legged_pose.header.frame_id = "odom";
-            legged_pose.pose.position.x = state.pos_[0];
-            legged_pose.pose.position.y = state.pos_[1];
-            legged_pose.pose.position.z = state.pos_[2];
+        Eigen::Vector3d current_position = Eigen::Vector3d(state.pos_[0],
+                                                           state.pos_[1],
+                                                           state.pos_[2]);
+        if((last_position_ - current_position).norm() > 0.1)
+        {
+            if (path_pub_->trylock()) {
+                geometry_msgs::PoseStamped legged_pose;
+                legged_pose.header.stamp = time;
+                legged_pose.header.frame_id = "odom";
+                legged_pose.pose.position.x = state.pos_[0];
+                legged_pose.pose.position.y = state.pos_[1];
+                legged_pose.pose.position.z = state.pos_[2];
 
-            legged_pose.pose.orientation.x = state.quat_.x();
-            legged_pose.pose.orientation.y = state.quat_.y();
-            legged_pose.pose.orientation.z = state.quat_.z();
-            legged_pose.pose.orientation.w = state.quat_.w();
+                legged_pose.pose.orientation.x = state.quat_.x();
+                legged_pose.pose.orientation.y = state.quat_.y();
+                legged_pose.pose.orientation.z = state.quat_.z();
+                legged_pose.pose.orientation.w = state.quat_.w();
 
-            path_pub_->msg_.header.stamp = ros::Time::now();
-            path_pub_->msg_.header.frame_id = "odom";
-            path_pub_->msg_.poses.push_back(legged_pose);
+                path_pub_->msg_.header.stamp = ros::Time::now();
+                path_pub_->msg_.header.frame_id = "odom";
+                path_pub_->msg_.poses.push_back(legged_pose);
 
-            path_pub_->unlockAndPublish();
+                path_pub_->unlockAndPublish();
+            }
         }
-
     }
 }
 
@@ -140,6 +145,8 @@ void LinearKFPosVelEstimator::update(RobotState& state)
     r.block(12, 12, 12, 12) = r_.block(12, 12, 12, 12) * foot_sensor_noise_velocity;
     r.block(24, 24, 4, 4) = r_.block(24, 24, 4, 4) * foot_height_sensor_noise;
 
+    Vec4<double> pzs = Vec4<double>::Zero();
+
     for (int i = 0; i < 4; i++)
     {
         int i1 = 3 * i;
@@ -163,8 +170,8 @@ void LinearKFPosVelEstimator::update(RobotState& state)
 //        Vec3<double> omegaBody = state.angular_vel_;
 //        Vec3<double> dp_f = Rbod * (omegaBody.cross(p_rel) + dp_rel);
 
-        Vec3<double> p_rel = state.foot_pos_[i]; // b_pfoot
-        Vec3<double> dp_rel = state.foot_vel_[i]; // b_vfoot
+        Vec3<double> p_rel = state.bfoot_pos_[i]; // b_pfoot
+        Vec3<double> dp_rel = state.bfoot_vel_[i]; // b_vfoot
         Vec3<double> p_f = Rbod * p_rel;
         Vec3<double> omegaBody = state.angular_vel_;
         Vec3<double> dp_f = Rbod * (omegaBody.cross(p_rel) + dp_rel);
@@ -179,7 +186,6 @@ void LinearKFPosVelEstimator::update(RobotState& state)
 
     Vec3<double> g(0, 0, -9.81);
     Vec3<double> accel = Rbod * state.accel_ + g;
-    Vec4<double> pzs = Vec4<double>::Zero();
 
     Eigen::Matrix<double, 28, 1> y;
     y << ps_, vs_, pzs;

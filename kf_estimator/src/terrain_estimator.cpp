@@ -10,9 +10,14 @@ nh_(nh)
     norm_pub_ =
             std::make_shared<realtime_tools::RealtimePublisher<geometry_msgs::Vector3>>(nh_, "/dog/terrain_norm", 100);
 
+    norm_imu_pub_ =
+            std::make_shared<realtime_tools::RealtimePublisher<geometry_msgs::Vector3>>(nh_, "/dog/terrain_imu_norm", 100);
+
     marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/dog/terrain_norm_vis", 1);
 
     marker_real_time_pub_ = nh_.advertise<visualization_msgs::Marker>("/dog/terrain_norm_vis_debug", 1);
+
+    imu_marker_pub_ = nh_.advertise<visualization_msgs::Marker>("/dog/terrain_imu_norm_vis_debug", 1);
 
     Reset();
 }
@@ -37,6 +42,7 @@ void TerrainEstimator::update(const RobotState &state) {
     ros::Time time = ros::Time::now();
     if (time - last_publish_ > ros::Duration(0.02))  // 50Hz
     {
+            // methods 1: leg estimation
             for (int leg = 0; leg < 4; ++leg) {
                 if(state.contact_state_[leg])
                 {
@@ -63,8 +69,14 @@ void TerrainEstimator::update(const RobotState &state) {
             terrain_norm_ = Eigen::Vector3d(-A_pla_[1], -A_pla_[2], 1);
             terrain_norm_.normalize();
 
+            // methods 2: imu estimation
+            Eigen::Quaterniond quat = state.quat_;
+            Eigen::Vector3d defalut_norm = Eigen::Vector3d(0, 0, 1);
+            terrain_imu_norm_ = quat * defalut_norm;
+
             publish();
             visPublish(state);
+            visImuPublish(state);
             if((last_postion_ - state.pos_).norm() > 0.1)
             {
                 visArrayPublish(state, id_);
@@ -84,6 +96,14 @@ void TerrainEstimator::publish() {
         norm_pub_->msg_.y = terrain_norm_[1];
         norm_pub_->msg_.z = terrain_norm_[2];
         norm_pub_->unlockAndPublish();
+    }
+
+    if(norm_imu_pub_->trylock())
+    {
+        norm_imu_pub_->msg_.x = terrain_imu_norm_[0];
+        norm_imu_pub_->msg_.y = terrain_imu_norm_[1];
+        norm_imu_pub_->msg_.z = terrain_imu_norm_[2];
+        norm_imu_pub_->unlockAndPublish();
     }
 }
 
@@ -139,6 +159,32 @@ void TerrainEstimator::visArrayPublish(const RobotState &state, int id) {
 
     marker_array_.markers.push_back(marker);
     marker_pub_.publish(marker_array_);
+}
+
+void TerrainEstimator::visImuPublish(const RobotState &state) {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "odom";
+    marker.header.stamp = ros::Time::now();
+    marker.ns = "imu_terrain";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::ARROW;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.points.resize(2);
+    marker.points[0].x = state.pos_.x();
+    marker.points[0].y = state.pos_.y();
+    marker.points[0].z = 0.;
+    marker.points[1].x = state.pos_.x() + terrain_imu_norm_(0);
+    marker.points[1].y = state.pos_.y() + terrain_imu_norm_(1);
+    marker.points[1].z = terrain_imu_norm_(2);
+    marker.scale.x = 0.01;
+    marker.scale.y = 0.01;
+    marker.scale.z = 0.01;
+    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.r = 0.0;
+    marker.color.g = 0.0;
+    marker.color.b = 1.0;
+
+    imu_marker_pub_.publish(marker);
 }
 
 

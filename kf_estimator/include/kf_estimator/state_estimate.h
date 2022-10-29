@@ -28,6 +28,7 @@ private:
     std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Path>> path_pub_;
 
     ros::Time last_publish_;
+    Eigen::Vector3d last_position_;
     tf2_ros::TransformBroadcaster tf_br_;
 };
 

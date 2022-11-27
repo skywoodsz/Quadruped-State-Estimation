@@ -70,7 +70,7 @@ void KF_ESTIMATOR::update(const ros::TimerEvent &event) {
     if(imu_flag_ & motor_flag_ & contact_flag_)
     {
         if (linear_estimate_ != nullptr)
-            linear_estimate_->update(robot_state_);
+            linear_estimate_->update(robot_state_, time_);
 
         BodyPinocchioKine();
         PinocchioKine();
@@ -226,6 +226,8 @@ void KF_ESTIMATOR::MotorCallBack(const cheetah_msgs::MotorState::ConstPtr &msg) 
         leg_joints_[2].joints_[joint].pos = motor_data.q[9 + joint];
         leg_joints_[2].joints_[joint].vel = motor_data.dq[9 + joint];
     }
+
+    time_ = motor_data.header.stamp;
 
     motor_flag_ = true;
 }

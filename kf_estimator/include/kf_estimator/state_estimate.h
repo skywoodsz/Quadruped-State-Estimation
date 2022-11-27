@@ -21,7 +21,7 @@ class StateEstimateBase
 public:
     StateEstimateBase(ros::NodeHandle& nh);
     virtual ~StateEstimateBase(){};
-    virtual void update(RobotState& state);
+    virtual void update(RobotState& state, ros::Time timeStamp);
 
 private:
     std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry>> odom_pub_;
@@ -36,7 +36,7 @@ class LinearKFPosVelEstimator : public StateEstimateBase
 {
 public:
     LinearKFPosVelEstimator(ros::NodeHandle& nh);
-    void update(RobotState& state);
+    void update(RobotState& state, ros::Time timeStamp);
 
 private:
     Eigen::Matrix<double, 18, 1> x_hat_;

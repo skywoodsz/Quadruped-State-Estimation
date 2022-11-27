@@ -48,6 +48,7 @@ private:
 
     ros::Time last_publish_;
     ros::Timer timer_;
+    ros::Time time_;
 
     ros::Subscriber imu_sub_;
     ros::Subscriber motor_sub_;

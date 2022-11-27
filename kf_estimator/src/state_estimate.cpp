@@ -10,9 +10,9 @@ StateEstimateBase::StateEstimateBase(ros::NodeHandle& nh)
     path_pub_ = std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::Path>>(nh, "/dog/legged_path", 100);
 }
 
-void StateEstimateBase::update(RobotState& state)
+void StateEstimateBase::update(RobotState& state, ros::Time timeStamp)
 {
-    ros::Time time = ros::Time::now();
+    ros::Time time = timeStamp;
     if (time < ros::Time(0.01))  // When simulate time reset
         last_publish_ = time;
     if (time - last_publish_ > ros::Duration(0.01))  // 100Hz
@@ -57,6 +57,7 @@ void StateEstimateBase::update(RobotState& state)
                                                            state.pos_[2]);
         if((last_position_ - current_position).norm() > 0.1)
         {
+            last_position_ = current_position;
             if (path_pub_->trylock()) {
                 geometry_msgs::PoseStamped legged_pose;
                 legged_pose.header.stamp = time;
@@ -122,7 +123,7 @@ LinearKFPosVelEstimator::LinearKFPosVelEstimator(ros::NodeHandle& nh) : StateEst
     r_.setIdentity();
 }
 
-void LinearKFPosVelEstimator::update(RobotState& state)
+void LinearKFPosVelEstimator::update(RobotState& state, ros::Time timeStamp)
 {
     // predict
     double imu_process_noise_position = 0.02;
@@ -179,6 +180,9 @@ void LinearKFPosVelEstimator::update(RobotState& state)
         ps_.segment(i1, 3) = -p_f;
         vs_.segment(i1, 3) = -dp_f;
 
+        // test
+//        pzs(i) = state.foot_pos_[i].z();
+
         // wrong!
 //        ps_.segment(3 * i, 3) = state.pos_ - state.foot_pos_[i];
 //        vs_.segment(3 * i, 3) = state.linear_vel_ - state.foot_vel_[i];
@@ -216,7 +220,7 @@ void LinearKFPosVelEstimator::update(RobotState& state)
     state.pos_ = x_hat_.block(0, 0, 3, 1);
     state.linear_vel_ = x_hat_.block(3, 0, 3, 1);
 
-    StateEstimateBase::update(state);
+    StateEstimateBase::update(state, timeStamp);
 }
 
 
